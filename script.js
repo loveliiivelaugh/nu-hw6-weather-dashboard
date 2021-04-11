@@ -1,3 +1,4 @@
+//assign global variables to DOM elements
 const form = document.querySelector("form");
 const formInput = document.querySelector("#form-input");
 const weatherCardsContainer = document.getElementById("5-day");

@@ -10,7 +10,7 @@ A small weather application featuring the ability to find weather and 5-day fore
 
 ## Demo
 
-![Gif](/assets/images/screenshot.png)
+![Gif](/assets/images/weather-dashboard.gif)
 
 ## Deployment
 
