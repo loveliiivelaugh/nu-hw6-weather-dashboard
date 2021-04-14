@@ -20,7 +20,7 @@ const setIsFetching = (isFetching = false)  => {
 //handle local storage function for encapsulating the CRUD operations to be called in a clean way anywhere throughout our app. Also perfect solution to handle multiple local storage's.
 const handleLocalStorage = (action, storageName, data) => {
   switch (action) {//CRUD
-    case "initialize" ://Read
+    case "initialize" ://Read/Create
       return localStorage.getItem(storageName) ? 
       JSON.parse(localStorage.getItem(storageName)) : [];
     case "set" ://Create/Update
@@ -68,10 +68,10 @@ const handleFetch = async (type, city) => {
 
   switch (type) {
     case "current": //current weather data
-      url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`;
+      url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`;
       return getData(url);
     case "5-day forecast":
-      url = `http://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${key}`;
+      url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${key}`;
       //converts the data into a 5-day forecast
       return getData(url);
     default:
@@ -109,7 +109,7 @@ const setCityHistoryList = storage => {
 
     const convertTemp = temp => ((temp *  9/5) - 459.67 );
 
-    const fetchWeatherIcon = icon => `http://openweathermap.org/img/w/${icon}.png`;
+    const fetchWeatherIcon = icon => `https://openweathermap.org/img/w/${icon}.png`;
 
     weatherDetailsCard.innerHTML = `
       <div class="card w-auto">
@@ -134,7 +134,7 @@ const setWeatherCards = forecast => {
   //const farenheit = Math.round(convertTemp(forecast.main.temp));
   //const feelsLikeF = Math.round(convertTemp(forecast.main.feels_like));
 
-  const fetchWeatherIcon = icon => `http://openweathermap.org/img/w/${icon}.png`;
+  const fetchWeatherIcon = icon => `https://openweathermap.org/img/w/${icon}.png`;
 
 weatherCardsContainer.innerHTML = `
   ${forecast.map(day => `
