@@ -38,32 +38,36 @@ const handleLocalStorage = (action, storageName, data) => {
 
 //function to handle fetch
 const handleFetch = async (type, city) => {
-  key = '7d56f33a468c2d6fc63233a09c84c8dc';
+  const key = '7d56f33a468c2d6fc63233a09c84c8dc';
   // setIsFetching(true);
 
 
   const getData = async url => {
     await fetch(url)
-    .then(response => response.json())
-    .then(data => {
-      console.info(data);
-      // setIsFetching(false);
-      if ( data.coord ) { setDetailsCard(data); }
-      if ( data.list ) {
-        const fiveDayData = convertToFiveDay(data);
-        setWeatherCards(fiveDayData); 
-      }
-      return data;
-    })
-    .catch(exception => {
-      console.error(exception);
-      // setIsFetching(false);
-    });
+      .then(response => response.json())
+      .then(data => {
+        // setIsFetching(false);
+        let lat = null;
+        let lon = null;
+
+        if ( data.coord ) { 
+          lat = data.coord.lat;
+          lon = data.coord.lon;
+          const url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${key}`;
+          fetch(url)
+            .then(response => response.json())
+            .then(uvi => uvi && data && setDetailsCard(data, uvi.current.uvi))
+            .catch(exception => console.error(exception));
+        }
+
+        if ( data.list ) { return setWeatherCards(convertToFiveDay(data)); }
+
+      })
+      .catch(exception => console.error(exception));
   };
-  
+
   switch (type) {
     case "current": //current weather data
-      // url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`;
       url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`;
       return getData(url);
     case "5-day forecast":
@@ -99,7 +103,7 @@ const setCityHistoryList = storage => {
     setCityHistoryList();
   };
 
-  const setDetailsCard = todaysWeather => {
+  const setDetailsCard = (todaysWeather, uvi) => {
 
     console.info(todaysWeather);
 
@@ -114,7 +118,7 @@ const setCityHistoryList = storage => {
           <p class="lead">Temperature: ${convertTemp(todaysWeather.main.temp).toFixed(1)} F</p>
           <p class="card-subtitle mb-2">Humidity: ${todaysWeather.main.humidity}%</p>
           <p class="card-text">Wind Speed: ${todaysWeather.wind.speed} MPH</p>
-          <p class="card-text">UV Index: <span class="span-uv-index">9.49</span></p>
+          <p class="card-text">UV Index: <span class="span-uv-index">${uvi}</span></p>
         </div>
       </div>
     `;
