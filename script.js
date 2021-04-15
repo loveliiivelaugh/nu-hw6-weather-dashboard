@@ -6,11 +6,15 @@ const weatherDetailsCard = document.getElementById('weather-details');
 const searchHistoryList = document.querySelector("ul");
 const spinner = document.getElementById("spinner");
 
-console.info(moment().format("M/DD/YYYY"))
+//variable to hold temporary loading status 
+let loading = false;
+//function to update the loading status when called passing in a boolean.
+const setLoading = isLoading => loading = isLoading;
+
 //function to handle a spinner if app is fetching weather data
-const setIsFetching = (isFetching = false)  => {
-  if (isFetching == true) {
-    spinner.innerHTML = `<div>I am a spinner</div>` || "Loading...";
+const setIsFetching = (loading)  => {
+  if (loading == true) {
+    spinner.innerHTML = `<div class="spinner-border text-primary"></div>` || "Loading...";
     spinner.display = "block";
   }
   else {
@@ -28,7 +32,7 @@ const handleLocalStorage = (action, storageName, data) => {
     case "get" ://Read
       return JSON.parse(localStorage.getItem(storageName));
     case "clear" ://Delete
-      localStorage.clear(storageName)
+      localStorage.clear(storageName);
       setCityHistoryList();
       break;
     default:
@@ -36,23 +40,27 @@ const handleLocalStorage = (action, storageName, data) => {
   }
 };
 
-//function to handle fetch
+//function to handle fetch with multiple endpoints taking in the endpoint type and city
 const handleFetch = async (type, city) => {
+  //api key need to move this to not make it public
   const key = '7d56f33a468c2d6fc63233a09c84c8dc';
-  // setIsFetching(true);
+  //setLoading() and show the spinner or not
+  setLoading(true);
+  setIsFetching(loading);
 
 
   const getData = async url => {
     await fetch(url)
       .then(response => response.json())
       .then(data => {
-        // setIsFetching(false);
         let lat = null;
         let lon = null;
 
+        //if this is the call that returns coordinates
         if ( data.coord ) { 
           lat = data.coord.lat;
           lon = data.coord.lon;
+          //dynamic url using the lat and long returned in the initital api call
           const url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${key}`;
           fetch(url)
             .then(response => response.json())
@@ -60,17 +68,24 @@ const handleFetch = async (type, city) => {
             .catch(exception => console.error(exception));
         }
 
-        if ( data.list ) { return setWeatherCards(convertToFiveDay(data)); }
+        //if this is the call that returns a recipe list
+        if ( data.list ) { return setWeatherCards(convertToFiveDay(data)); }//set the weather cards with the returned data but convert the data to a five day forecast because it returns every 3 hours over 5 days so needs conversion.
 
       })
       .catch(exception => console.error(exception));
+
+      //once everything is all done fetching and waiting for the server to respond
+      //update the status of loading and update displaying the spinner or not
+      setLoading(false)
+      setIsFetching(false);
   };
 
+  //check the type if we need current weather or 5-day forecast
   switch (type) {
     case "current": //current weather data
       url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`;
       return getData(url);
-    case "5-day forecast":
+    case "5-day forecast"://5-day forecast
       url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${key}`;
       //converts the data into a 5-day forecast
       return getData(url);
@@ -81,36 +96,43 @@ const handleFetch = async (type, city) => {
 
 //set initialized storage array to variable
 const storage = handleLocalStorage("initialize", "searchHistory");
+//use the length of the storage to dynamically set the index of the last searched item.
 const lastSearchedIndex = storage.length;
 
 
 //function that handles updating the search history list to the DOM.
 const setCityHistoryList = storage => {
+  //grab the current state of the searchHistory storage instance
   const updatedStorage = handleLocalStorage("get", "searchHistory");
+  //set data to the value of updatedStorage if it is not null otherwise set it to the storage prop being passed in.
   let data = updatedStorage ? updatedStorage : storage;
 
+  //set the innerHTML of the searchHistoryList in the DOM.
   searchHistoryList.innerHTML = `
-  ${data.map(history => 
-      `<li class="list-group-item">${history.city}</li>`
-    ).join("")}
-    `;
-  };
+    ${data.map(history => `<li class="list-group-item">${history.city}</li>` ).join("")}
+  `;
+
+};
+//set the cityHistoryList on page load using the storage.  
+setCityHistoryList(storage);
   
-  setCityHistoryList(storage);
-  
-  const clearHistory = () => {
-    handleLocalStorage('clear', 'searchHistory');
-    setCityHistoryList();
-  };
+//handle clearing the search history
+const clearHistory = () => {
+  //clear the searchHistory local storage instance using the local storage wrapper function.
+  handleLocalStorage('clear', 'searchHistory');
+  //update the search history list
+  setCityHistoryList();
+};
 
-  const setDetailsCard = (todaysWeather, uvi) => {
+//function that converts the returned kelvin temperature measurement type into farenheit.
+const convertTemp = temp => ((temp *  9/5) - 459.67 );
 
-    console.info(todaysWeather);
+//simple helper function to return the correct icon based on the iconId being passed to it.
+const fetchWeatherIcon = icon => `https://openweathermap.org/img/w/${icon}.png`;
 
-    const convertTemp = temp => ((temp *  9/5) - 459.67 );
-
-    const fetchWeatherIcon = icon => `https://openweathermap.org/img/w/${icon}.png`;
-
+//function that handles setting the main weather details card. passing in todaysWeather, and uvi props.
+const setDetailsCard = (todaysWeather, uvi) => {
+    //set the innerHTML of the weatherDetailsCard in the DOM.
     weatherDetailsCard.innerHTML = `
       <div class="card w-auto">
         <div class="card-body">
@@ -122,37 +144,28 @@ const setCityHistoryList = storage => {
         </div>
       </div>
     `;
-  return;
 };
   
+//function that handles setting the 5-day weather cards.
 const setWeatherCards = forecast => {
-
-  console.info(forecast);
-
-  const convertTemp = temp => ((temp *  9/5) - 459.67 );
-  
-  //const farenheit = Math.round(convertTemp(forecast.main.temp));
-  //const feelsLikeF = Math.round(convertTemp(forecast.main.feels_like));
-
-  const fetchWeatherIcon = icon => `https://openweathermap.org/img/w/${icon}.png`;
-
-weatherCardsContainer.innerHTML = `
-  ${forecast.map(day => `
-    <div class="card text-white bg-primary mb-3" style="width: 10rem; margin: 2%;">
-      <div class="card-body">
-        <h5 class="card-title">${moment(day.dt_txt).format("M/DD/YYYY")}</h5>
-        <img class="thumbnail" src=${fetchWeatherIcon(day.weather[0].icon)} alt="Weather icon.">
-        <p class="card-subtitle mb-2">Temp: ${convertTemp(day.main.temp).toFixed(2)} F</p>
-        <p class="card-text">Humidity: ${(day.main.humidity).toFixed(0)}%</p>
-        <p class="card-text"> ${day.weather[0].description}</p>
-      </div>
-    </div>
-    `).join("")}
-  `;
+  //set the innerHTML of the weatherCardsContainer in the DOM.
+    weatherCardsContainer.innerHTML = `
+      ${forecast.map(day => `
+        <div class="card text-white bg-primary mb-3" style="width: 10rem; margin: 2%;">
+          <div class="card-body">
+            <h5 class="card-title">${moment(day.dt_txt).format("M/DD/YYYY")}</h5>
+            <img class="thumbnail" src=${fetchWeatherIcon(day.weather[0].icon)} alt="Weather icon.">
+            <p class="card-subtitle mb-2">Temp: ${convertTemp(day.main.temp).toFixed(2)} F</p>
+            <p class="card-text">Humidity: ${(day.main.humidity).toFixed(0)}%</p>
+            <p class="card-text"> ${day.weather[0].description}</p>
+          </div>
+        </div>
+        `).join("")}
+      `;
 } ;     
 
+//function that handles converting the returned 5-day every 3 hour weather forecast to just 5 days
 const convertToFiveDay = weatherData => {
-  console.info(weatherData);
   //set empty array to hold 5 days worth of forecast data
   const forecast = []; 
   // to format the data structure to be strictly a 5-day forecast, we'll use this "for loop" to divide the 40 "3-hour" record lines by 8. Which will return just 5 days worth of data then.
@@ -165,7 +178,7 @@ const convertToFiveDay = weatherData => {
   return forecast;
 };
 
-//funciton that contains the logic to set the city and get the weather
+//funciton that contains the logic to set the city and get the weather from the API.
 const handleSubmit = async event => {
   event.preventDefault();
 
@@ -180,12 +193,17 @@ const handleSubmit = async event => {
   //get 5-day weather data from API passing in the city
   await handleFetch("5-day forecast", formInput.value);
   
+  //update the search history list.
   setCityHistoryList();
 };
 
+//function wrapping some of the functionality to be triggered on page load.
 const onPageLoad = async event => {
   //gotta add this line to the top in a conditional to check if nothing searched yet then show the last city searched as the default city showing weather on screen load.
-  const defaultCity = storage[lastSearchedIndex - 1].city ? storage[lastSearchedIndex - 1].city : "chicago";
+  const defaultCity = storage[lastSearchedIndex - 1].city ?  //if there is a city in storage
+  storage[lastSearchedIndex - 1].city :  //set it to the last city that was searched in storage
+  "chicago"; //if there are no cities in the search history storage then use the default city "Chicago".
+
   //get weather data from API passing in the city
   await handleFetch("current", defaultCity);
 
@@ -193,4 +211,5 @@ const onPageLoad = async event => {
   await handleFetch("5-day forecast", defaultCity);
 };
 onPageLoad();
+
 form.addEventListener("submit", event => handleSubmit(event));
