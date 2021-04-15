@@ -42,7 +42,7 @@ const handleLocalStorage = (action, storageName, data) => {
 
 //function to handle fetch with multiple endpoints taking in the endpoint type and city
 const handleFetch = async (type, city) => {
-  //api key need to move this to not make it public
+  //api key need to move this to make it not public when pushing like environment variable.
   const key = '7d56f33a468c2d6fc63233a09c84c8dc';
   //setLoading() and show the spinner or not
   setLoading(true);
@@ -99,6 +99,7 @@ const storage = handleLocalStorage("initialize", "searchHistory");
 //use the length of the storage to dynamically set the index of the last searched item.
 const lastSearchedIndex = storage.length;
 
+// const removeDuplicates = array => array.filter((a, b) => console.log(array.indexOf(a), b));
 
 //function that handles updating the search history list to the DOM.
 const setCityHistoryList = storage => {
@@ -182,8 +183,8 @@ const convertToFiveDay = weatherData => {
 const handleSubmit = async event => {
   event.preventDefault();
 
-  //push the captured form input to the storage
-  storage.push({ city: formInput.value });
+  //push the captured form input to the storage //threw in a little regex function to capitlaize the first letter of the city from the input.
+  storage.push({ city: formInput.value.replace(/^\w/, c => c.toUpperCase()) });
   //set the storage using our vanilla handleLocalStorage hook
   handleLocalStorage("set", "searchHistory", storage);
 
@@ -195,6 +196,8 @@ const handleSubmit = async event => {
   
   //update the search history list.
   setCityHistoryList();
+
+  formInput.value = '';
 };
 
 //function wrapping some of the functionality to be triggered on page load.
