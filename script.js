@@ -100,6 +100,15 @@ const storage = handleLocalStorage("initialize", "searchHistory");
 const lastSearchedIndex = storage.length;
 
 // const removeDuplicates = array => array.filter((a, b) => console.log(array.indexOf(a), b));
+const clickHandler = async event => {
+  const city = event.target.dataset.city;
+
+  //get weather data from API passing in the city
+  await handleFetch("current", city);
+
+  //get 5-day weather data from API passing in the city
+  await handleFetch("5-day forecast", city);
+};
 
 //function that handles updating the search history list to the DOM.
 const setCityHistoryList = storage => {
@@ -110,7 +119,17 @@ const setCityHistoryList = storage => {
 
   //set the innerHTML of the searchHistoryList in the DOM.
   searchHistoryList.innerHTML = `
-    ${data.map(history => `<li class="list-group-item">${history.city}</li>` ).join("")}
+    ${data.map((history, key) => `
+      <li 
+        key="${key}" 
+        class="list-group-item"
+        data-city="${history.city}"
+        onclick="clickHandler(event)"
+        style="cursor: pointer;"
+      >
+        ${history.city}
+      </li>
+    `).join("")}
   `;
 
 };
@@ -133,6 +152,7 @@ const fetchWeatherIcon = icon => `https://openweathermap.org/img/w/${icon}.png`;
 
 //function that handles setting the main weather details card. passing in todaysWeather, and uvi props.
 const setDetailsCard = (todaysWeather, uvi) => {
+  
     //set the innerHTML of the weatherDetailsCard in the DOM.
     weatherDetailsCard.innerHTML = `
       <div class="card w-auto">
@@ -141,7 +161,9 @@ const setDetailsCard = (todaysWeather, uvi) => {
           <p class="lead">Temperature: ${convertTemp(todaysWeather.main.temp).toFixed(1)} F</p>
           <p class="card-subtitle mb-2">Humidity: ${todaysWeather.main.humidity}%</p>
           <p class="card-text">Wind Speed: ${todaysWeather.wind.speed} MPH</p>
-          <p class="card-text">UV Index: <span class="span-uv-index">${uvi}</span></p>
+          <p class="card-text">
+            UV Index: <span class="span-uv-index ${uvi > 5 ? "bg-danger text-white" : uvi > 3 ? "bg-warning" : uvi < 3 && "bg-success"}">${uvi}</span>
+          </p>
         </div>
       </div>
     `;
@@ -158,6 +180,7 @@ const setWeatherCards = forecast => {
             <img class="thumbnail" src=${fetchWeatherIcon(day.weather[0].icon)} alt="Weather icon.">
             <p class="card-subtitle mb-2">Temp: ${convertTemp(day.main.temp).toFixed(2)} F</p>
             <p class="card-text">Humidity: ${(day.main.humidity).toFixed(0)}%</p>
+            <p class="card-text">Wind Speed: ${day.wind.speed} MPH</p>
             <p class="card-text"> ${day.weather[0].description}</p>
           </div>
         </div>
